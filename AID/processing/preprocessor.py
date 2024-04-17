@@ -1,23 +1,3 @@
-#
-# Copyright (c) 2020 Vitalis Salis.
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
 import ast
 
 import utils
@@ -94,13 +74,12 @@ class PreProcessor(ProcessingBase):
         self.import_manager.set_current_mod(self.modname, self.filename)
 
         mod = self.module_manager.create(self.modname, self.filename)
-        # 计算模块的首行（first）和尾行（last），并将其添加到模块对象中。
         first = 1
         last = len(self.contents.splitlines())
         if last == 0:
             first = 0
         mod.add_method(self.modname, first, last)
-        # 获取当前模块的根作用域（root_sc）
+
         root_sc = self.scope_manager.get_scope(self.modname)
         if not root_sc:
             # initialize module scopes
@@ -126,9 +105,9 @@ class PreProcessor(ProcessingBase):
         defi = self.def_manager.get(self.modname)
         if not defi:
             defi = self.def_manager.create(self.modname, utils.constants.MOD_DEF)
-        # 调用 ast.NodeVisitor 类的 visit_Module 方法，继续遍历并处理模块的AST节点。
+
         super().visit_Module(node)
-    # 处理 Python 中的 import 语句和 from ... import ... 语句。
+
     def visit_Import(self, node, prefix="", level=0):
         """
         For imports of the form
@@ -139,14 +118,14 @@ class PreProcessor(ProcessingBase):
         level is set to a number indicating the number
         of parent directories (e.g. in this case level=1)
         """
-        # 用于处理导入的模块名称的嵌套函数。如果存在 prefix，则将其与模块名称组合起来，以获得完整的模块名称。
+
         def handle_src_name(name):
             # Get the module name and prepend prefix if necessary
             src_name = name
             if prefix:
                 src_name = prefix + "." + src_name
             return src_name
-        # 用于处理模块的作用域和名称。它会将导入的定义从模块的作用域中复制到当前作用域中
+
         def handle_scopes(imp_name, tgt_name, modname):
             def create_def(scope, name, imported_def):
                 if name not in scope.get_defs():
@@ -175,7 +154,7 @@ class PreProcessor(ProcessingBase):
                     current_scope.get_def(tgt_name).get_name_pointer().add(
                         defi.get_ns()
                     )
-        # 用于处理外部导入，例如 import package.module.module...，它将被处理为 import package，并且将相应的定义添加到当前作用域中。
+
         def add_external_def(name, target):
             # In case we encounter an external import in the form of:
             #  "import package.module.module...
@@ -191,9 +170,7 @@ class PreProcessor(ProcessingBase):
             defi = self.def_manager.get(name)
             if not defi:
                 defi = self.def_manager.create(name, utils.constants.EXT_DEF)
-                #这里是造成多重继承的主要原因
-                #print(defi.fullns)
-            #print(defi.fullns)
+
             scope = self.scope_manager.get_scope(self.current_ns)
             if target != "*":
                 # add a def for the target that points to the name
@@ -203,15 +180,14 @@ class PreProcessor(ProcessingBase):
                     tgt_defi = self.def_manager.create(tgt_ns, utils.constants.EXT_DEF)
                 tgt_defi.get_name_pointer().add(defi.get_ns())
                 scope.add_def(target, tgt_defi)
-        # 遍历 node.names，其中 node 是 ast.Import 或 ast.ImportFrom 节点的子节点列表，表示导入的模块或定义。
+
         for import_item in node.names:
             src_name = handle_src_name(import_item.name)
-            #别称，as的名字，如果没有就是src_name
+
             tgt_name = import_item.asname if import_item.asname else import_item.name
-            #返回src_name对于当前目录的相对路径
+
             imported_name = self.import_manager.handle_import(src_name, level)
-            #print(src_name, tgt_name, imported_name)
-            #imported_name == None，表示不在当前目录
+
             if not imported_name:
                 add_external_def(src_name, tgt_name)
                 continue
@@ -227,7 +203,7 @@ class PreProcessor(ProcessingBase):
                 handle_scopes(import_item.name, tgt_name, imported_name)
             else:
                 add_external_def(src_name, tgt_name)
-        # 处理所有未被分析的模块。这些模块可能是在代码中导入但尚未处理的模块。
+
         # handle all modules that were not analyzed
         for modname in self.import_manager.get_imports(self.modname):
             fname = self.import_manager.get_filepath(modname)
@@ -243,7 +219,7 @@ class PreProcessor(ProcessingBase):
 
     def visit_ImportFrom(self, node):
         self.visit_Import(node, prefix=node.module, level=node.level)
-    # 找到给定AST（抽象语法树）节点中的最后一行的行号
+
     def _get_last_line(self, node):
         lines = sorted(
             list(ast.walk(node)),
@@ -258,7 +234,7 @@ class PreProcessor(ProcessingBase):
             return node.lineno
 
         return last
-    # 处理函数定义，包括参数的处理、默认值的处理以及将函数添加到模块中。
+
     def _handle_function_def(self, node, fn_name):
         current_def = self.def_manager.get(self.current_ns)
 
@@ -383,8 +359,6 @@ class PreProcessor(ProcessingBase):
             return
 
         utils.join_ns(self.current_ns, node.func.id)
-        #print(node.func.id)
-        #print(self.current_ns)
 
         defi = self.scope_manager.get_def(self.current_ns, node.func.id)
         if not defi:
@@ -416,7 +390,6 @@ class PreProcessor(ProcessingBase):
 
     def visit_ClassDef(self, node):
         # create a definition for the class (node.name)
-        #创建class的Definition对象
         cls_def = self.def_manager.handle_class_def(self.current_ns, node.name)
 
         mod = self.module_manager.get(self.modname)

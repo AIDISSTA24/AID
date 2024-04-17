@@ -1,23 +1,3 @@
-#
-# Copyright (c) 2020 Vitalis Salis.
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
 import ast
 import os
 
@@ -134,12 +114,7 @@ class CallGraphProcessor(ProcessingBase):
             self.add_ext_mod_node(name)
             self.call_graph.add_node(name, ext_modname)
             self.call_graph.add_edge(self.current_method, name)
-            #if(self.current_method == "examples\\abode2\\devices\\light.Light.set_color_temp"):
-                    #print(name)
 
-        # First visit the child function so that on the case of
-        #       func()()()
-        # we first visit the call to func and then the other calls
         for arg in node.args:
             self.visit(arg)
 
@@ -149,9 +124,7 @@ class CallGraphProcessor(ProcessingBase):
         self.visit(node.func)
 
         def get_call_full_name(call_node):
-            """
-            获取一个 ast.Call 节点的完整方法名称。
-            """
+
             if isinstance(call_node, ast.Call):
                 return _recursively_construct_name(call_node.func)
             else:
@@ -167,13 +140,11 @@ class CallGraphProcessor(ProcessingBase):
                 else:
                     return None  
             else:
-                # 处理其他类型的节点或返回一个错误/默认值
                 return None  
 
 
         names = self.retrieve_call_names(node)
-        #if(self.current_method == "examples\\abode2\\devices\\light.Light.set_color_temp"):
-            #print(names)
+
         if not names:
             if isinstance(node.func, ast.Attribute) and self.has_ext_parent(node.func):
                 # TODO: This doesn't work for cases
@@ -188,23 +159,14 @@ class CallGraphProcessor(ProcessingBase):
             else:
                 full_name = get_call_full_name(node)
 
-                #在这里添加没有Definition的对象的类型推断逻辑
-                #例如self.session.data.devices.get
                 if full_name:
                     
                     method_to_be_inferred = full_name.split('.')[-1]
-                    #print("无法识别需要类型推断的函数调用:", full_name)
-                    #print("无法识别需要类型推断的函数调用:", method_to_be_inferred)
-                    #过滤掉一些内置的，比如get，因为get可以是dict的内置方法，所以不推荐了
                     if method_to_be_inferred not in ["get", "json", "error", "warning"]:
-                        #print("无法识别需要类型推断的函数调用:", full_name)
-                        #这里实际上应该有个asyncio.DatagramProtocol存在的验证
                         if full_name == "self.transport.sendto":
                             self.call_graph.add_edge(self.current_method, "asyncio.DatagramTransport.sendto")
-                        #print("无法识别需要类型推断的函数调用的方法名:", method_to_be_inferred)
                         for class_name, methods_set in self.methods.items():
                             if method_to_be_inferred in methods_set:
-                                #print("推断为:", class_name + '.' + method_to_be_inferred)
                                 self.call_graph.add_edge(self.current_method, class_name + '.' + method_to_be_inferred)
             return
 
@@ -213,33 +175,21 @@ class CallGraphProcessor(ProcessingBase):
         self.last_called_names = names
         for pointer in names:
            
-            #print("常规函数调用:", pointer)
-            #pointer = api_handlers.APIHandler.gateway.request_with_retry
-            #这里会添加有Definition的对象的类型推断逻辑
-
-            #是否跳过后续
             pass_flag = False
-            #这个逻辑是因为_init_方法会被忽略，例如config.Config._init_在解析中就是config.Config，会出现解析完不是属性的情况
             if pointer.count('.') > 1:
                 attribute_to_be_inferred = pointer.rsplit('.', 1)[0]
                 method_to_be_inferred = pointer.split('.')[-1]
-                #attribute_to_be_inferred = api_handlers.APIHandler.gateway
-                #print("候选属性:", attribute_to_be_inferred)
                 if method_to_be_inferred not in ["get", "json", "error", "warning"]:
                     for class_name, attributes_set in self.attributes.items(): 
-                        # ..\SDK_dataset\pydeconz\interfaces\api_handlers.APIHandler 
-                        # {'gateway', 'resource_types', 'resource_type', '_subscribers', '_items', 'path'}
+
                         for attribute in attributes_set:
                             temp = class_name + '.' + attribute
                             if utils.equal_attribute(attribute_to_be_inferred, class_name + '.' + attribute):
-                                #print("常规函数调用:", pointer)
-                                #print("二者一致：", attribute_to_be_inferred, class_name + '.' + attribute)                          
+                     
                                 for class_name2, methods_set in self.methods.items():
                                     if method_to_be_inferred in methods_set:
-                                        #print("添加边：", self.current_method, class_name2 + '.' + method_to_be_inferred)
                                         self.call_graph.add_edge(self.current_method, class_name2 + '.' + method_to_be_inferred)
                                         pass_flag = True
-                                #print("________________________")
             if pass_flag:
                 continue
 
@@ -253,17 +203,6 @@ class CallGraphProcessor(ProcessingBase):
                     continue
                 self.call_graph.add_edge(self.current_method, pointer)
 
-
-            # TODO: This doesn't work
-            # and leads to calls from the decorators
-            # themselves to the function,
-            # creating edges to the first decorator
-            # for decorator in pointer_def.decorator_names:
-            #   dec_names = self.closured.get(decorator, [])
-            #   for dec_name in dec_names:
-            #       if self.def_manager.get(dec_name).
-            #               get_type() == utils.constants.FUN_DEF:
-            #           self.call_graph.add_edge(self.current_ns, dec_name)
 
             if pointer_def.get_type() == utils.constants.CLS_DEF:
                 init_ns = self.find_cls_fun_ns(pointer, utils.constants.CLS_INIT)

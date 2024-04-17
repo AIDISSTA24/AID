@@ -1,23 +1,3 @@
-#
-# Copyright (c) 2020 Vitalis Salis.
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
 import ast
 
 import utils
@@ -79,19 +59,14 @@ class PostProcessor(ProcessingBase):
     def visit_AnnAssign(self, node):
 
         if isinstance(node.annotation, ast.Name) and isinstance(node.target, ast.Name):
-            #target 为单独节点并可以是 Name, Attribute 或 Subscript 之一，其他几种情况还没考虑
             target_def = self.def_manager.get(utils.join_ns(self.current_ns, node.target.id))
             if target_def:
-                #print("target_def.fullns: " + target_def.fullns)
-                #print("当前有的指针: " + str(target_def.points_to['name'].values)) 
 
                 def split_path_class(path_class_str):
-                        # 使用 rpartition 分割，并获取左侧部分，这个方法可以从右往左分割
                         path, _, _ = path_class_str.rpartition('.')
                         return path
 
                 pointer_name = utils.join_ns(split_path_class(self.current_ns), node.annotation.id)
-                #print("要添加的指针名:" + str(pointer_name))
                 point_def = self.def_manager.get(pointer_name)
 
                 if point_def and pointer_name not in target_def.points_to['name'].values:
@@ -102,11 +77,8 @@ class PostProcessor(ProcessingBase):
         elif isinstance(node.annotation, ast.Attribute) and isinstance(node.annotation.value, ast.Name) and isinstance(node.target, ast.Name):
             target_def = self.def_manager.get(utils.join_ns(self.current_ns, node.target.id))
             if target_def:
-                #print("target_def.fullns: " + target_def.fullns)
-                #print("当前有的指针: " + str(target_def.points_to['name'].values)) 
 
                 pointer_name = utils.join_ns(node.annotation.value.id, node.annotation.attr)
-                #print(pointer_name)
                 if self.def_manager.get(pointer_name):
                     pass
                 else:
@@ -121,13 +93,6 @@ class PostProcessor(ProcessingBase):
         if node.value:
             self._visit_assign(node.value, targets)
 
-
-    # Redefined in line 118, 121
-    # def visit_Return(self, node):
-    #     self._visit_return(node)
-
-    # def visit_Yield(self, node):
-    #     self._visit_return(node)
 
     def visit_For(self, node):
         # only handle name targets
@@ -171,7 +136,7 @@ class PostProcessor(ProcessingBase):
 
     def visit_AsyncFunctionDef(self, node):
         self.visit_FunctionDef(node)
-    # 处理 Python 函数定义中的装饰器，包括装饰器的参数传递和装饰器的返回值对函数定义的影响。
+
     def visit_FunctionDef(self, node):
         # here we iterate decorators
         if node.decorator_list:
@@ -218,10 +183,8 @@ class PostProcessor(ProcessingBase):
                                 arg_def.get_name_pointer().add(prev_name)
                 previous_names = new_previous_names
 
-        #在这里添加类型注解的指针功能
         def do_assign(decoded, target):
             self.visit(target)
-            #处理解包的情况，为什么不处理List的情况？
             if isinstance(target, ast.Tuple):
                 for pos, elt in enumerate(target.elts):
                     if not isinstance(decoded, Definition) and pos < len(decoded):
@@ -233,63 +196,42 @@ class PostProcessor(ProcessingBase):
                         continue
                     defi = self._handle_assign(tns, decoded)
                     splitted = tns.split(".")
-                    # 在对应Scope增加Definition对象
                     self.scope_manager.handle_assign(
                         ".".join(splitted[:-1]), splitted[-1], defi
                     )
 
-        #if self.current_ns == "..\SDK_dataset\pysmartthings\entity.Entity" or self.current_ns == "entity.Entity":
         for arg in node.args.args:
             if arg.annotation:
-                #print(f"参数 {arg.arg} 有类型注解: {ast.dump(arg.annotation)}")
                 #if isinstance(arg.annotation, ast.Name) or isinstance(arg.annotation, ast.Subscript):
-                #if isinstance(arg.annotation, ast.Name) and arg.annotation.id == 'Api':
                 if isinstance(arg.annotation, ast.Name):
 
-                    fn_def = self.def_manager.get(utils.join_ns(self.current_ns, node.name))
-                    #print("fn_def.fullns: " + fn_def.fullns)           
+                    fn_def = self.def_manager.get(utils.join_ns(self.current_ns, node.name))       
                     arg_def = self.def_manager.get(utils.join_ns(fn_def.fullns, arg.arg))
-                    #print("arg_def.fullns: " + arg_def.fullns)
-                    #print("当前有的指针: " + str(arg_def.points_to['name'].values))
-
 
                     def split_path_class(path_class_str):
-                        # 使用 rpartition 分割，并获取左侧部分，这个方法可以从右往左分割
                         path, _, _ = path_class_str.rpartition('.')
                         return path
                     
 
                     pointer_name = utils.join_ns(split_path_class(self.current_ns), arg.annotation.id)
-                    #print("要添加的指针名:" + str(pointer_name))
 
                     point_def = self.def_manager.get(pointer_name)
 
                     if point_def and pointer_name not in arg_def.points_to['name'].values:
-                        #print("存在")
                         arg_def.points_to['name'].values = set()
                         arg_def.points_to['name'].values.add(pointer_name)
-                        #arg_def.points_to['name'].values.add(str(utils.join_ns(self.current_ns.split('.')[0], arg.annotation.id)))
                     else:
                         pass
-                        #print("不存在")
 
-                #目前这里能处理外部库，调用其他的内部文件不一定能解决
-                #但好像目前只能处理单次属性调用，再复杂不一定
                 elif isinstance(arg.annotation, ast.Attribute) and isinstance(arg.annotation.value, ast.Name):
                     
-                    fn_def = self.def_manager.get(utils.join_ns(self.current_ns, node.name))
-                    #print("fn_def.fullns: " + fn_def.fullns)           
+                    fn_def = self.def_manager.get(utils.join_ns(self.current_ns, node.name))      
                     arg_def = self.def_manager.get(utils.join_ns(fn_def.fullns, arg.arg))
-                    #print("arg_def.fullns: " + arg_def.fullns)
-                    #print("当前有的指针: " + str(arg_def.points_to['name'].values))
-                                                 
+                                              
                     pointer_name = utils.join_ns(arg.annotation.value.id, arg.annotation.attr)
-                    #print(pointer_name)
                     if self.def_manager.get(pointer_name):
-                        #print("存在")
                         pass
                     else:
-                        #print("不存在")
                         self.def_manager.create(pointer_name, 'EXTERNALDEF')
                     
                     if pointer_name not in arg_def.points_to['name'].values:
@@ -302,14 +244,12 @@ class PostProcessor(ProcessingBase):
     def visit_ClassDef(self, node):
         # create a definition for the class (node.name)
         cls_def = self.def_manager.handle_class_def(self.current_ns, node.name)
-        # 获得classNode对象
         # iterate bases to compute MRO for the class
         cls = self.class_manager.get(cls_def.get_ns())
         if not cls:
             cls = self.class_manager.create(cls_def.get_ns(), self.modname)
 
         cls.clear_mro()
-        #print(cls.ns)
         for base in node.bases:
             # all bases are of the type ast.Name
             self.visit(base)
@@ -333,9 +273,6 @@ class PostProcessor(ProcessingBase):
                         cls.add_parent(parent_cls.get_mro())
 
         cls.compute_mro()
-        #if cls.ns == '..\\SDK_dataset\\switchbot\\devices\\bulb.SwitchbotBulb' or cls.ns == 'devices.bulb.SwitchbotBulb':
-        #    print(cls.mro)
-        #    print("__________________________________________")
 
         super().visit_ClassDef(node)
 
@@ -421,7 +358,7 @@ class PostProcessor(ProcessingBase):
                         key_def = self.def_manager.create(
                             key_full_ns, utils.constants.NAME_DEF
                         )
-                    #添加到Dict的作用域下
+
                     dict_scope.add_def(str(name), key_def)
                     for v in decoded_value:
                         if isinstance(v, Definition):

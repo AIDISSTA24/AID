@@ -6,7 +6,6 @@ import os
 directory_path = "C:/Users/40382/Desktop/NewPyCG/SDK_dataset/pymystrom"
 
 
-#blink可以用来测试
 
 class PropertyVisitor(ast.NodeVisitor):
     def __init__(self):
@@ -44,15 +43,6 @@ def find_property_methods(directory):
 if __name__ == "__main__":
 
 
-    '''result1, result2 = find_property_methods(directory_path)
-    for file, methods in result1.items():
-        print(f"文件 {file} 中被@property修饰的方法:{', '.join(methods)}")
-
-    print(result2)
-    methods_list = set('.' + item for item in result2)
-    print(methods_list)'''
-
-
     for root, _, files in os.walk(directory_path):
         for file in files:
             if file.endswith(".py"):
@@ -80,7 +70,7 @@ if __name__ == "__main__":
                         for function in new_methods_list:
                             if function in filedata:
                                 filedata = filedata.replace(function + " ", function + "() ")
-                                #如果在赋值关系左侧，则回退
+
                                 filedata = filedata.replace(function + "() =", function + " =")
 
                                 filedata = filedata.replace(function + "}", function + "()}")
@@ -106,7 +96,6 @@ if __name__ == "__main__":
 
                                 filedata = filedata.replace(function + "\n", function + "()\n")
                                 filedata = filedata.replace(function + "()\n =", function + "\n =")
-                                print(f"字符串 '{function}' 已在文件中替换")
                                 with open(file_path, 'w') as file2:
                                     file2.write(filedata)                            
                     except SyntaxError as e:
@@ -114,9 +103,4 @@ if __name__ == "__main__":
 
 
 
-
-
-
-
-#directory_path = 'C:/Users/40382/Desktop/NewPyCG/scripts/test'
 

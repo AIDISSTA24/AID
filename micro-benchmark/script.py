@@ -45,7 +45,7 @@ def compare_json_files(file1_path, file2_path):
     #    print("两个JSON文件的内容不相同。")
 
 
-test_path = "C:\\Users\\misty\\OneDrive\\桌面\\NewPyCG\\micro_dataset\\builtins\\types"
+test_path = "C:\\Users\\misty\\OneDrive\\桌面\\NewPyCG\\micro-benchmark\\args\\assigned_call"
 test_file = test_path + "\main.py"
 file1_path = "C:/Users/misty/OneDrive/桌面/NewPyCG/cg.json"
 file2_path = "C:/Users/misty/OneDrive/桌面/NewPyCG/cg2.json"
