@@ -11,7 +11,7 @@ Prerequisites:
 Project structure:
 * AID: source codes of AID
 * pycg: source codes of PyCG
-* SDK_dataset: Dataset of 45 SDKs
+* SDK_dataset: dataset of 45 SDKs
 * micro-benchmark: 123 Python programs of 18 categories
 * RQ1-2: evaluation of RQ1 and RQ2
 * RQ3: evaluation of RQ3
