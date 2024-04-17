@@ -6,7 +6,7 @@ This repository is dedicated to sharing the tool AID and the data for the ISSTA 
 ## Getting AID to run
 
 Prerequisites:
-* Python = 3.8
+* Python >= 3.8
 
 
 AID usage:
@@ -39,9 +39,9 @@ SDK_dataset\broadlink\light.lb1.set_state
 Run AID and AID-PyCG to identify APIs from 45 SDKs in **SDK_dataset**.
 
 ```bash
-# 1. run AID
+# 1. run the script of testing AID
 $ python RQ1-2/DECG_run.py
-# 2. run AID-PyCG
+# 2. run the script of testing AID-PyCG
 $ python RQ1-2/PyCG_run.py     
 ```
 
