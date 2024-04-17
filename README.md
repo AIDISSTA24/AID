@@ -20,7 +20,7 @@ $ python AID/__main__.py [module_path1 module_path2 module_path3...] [-o output_
 ```bash
 $ python AID/__main__.py SDK_dataset/broadlink/light.py -o cg.json
 ```
-The call relations are shown in *cg.json*.
+The call relations are shown in **cg.json**.
 
 The identified SDK APIs are printed out:
 
@@ -36,7 +36,7 @@ SDK_dataset\broadlink\light.lb1.set_state
 
 ### RQ1 and RQ2 Evaluation
 
-Run AID and AID-PyCG to identify APIs from 45 SDKs in SDK_dataset.
+Run AID and AID-PyCG to identify APIs from 45 SDKs in **SDK_dataset**.
 
 ```bash
 # 1. run AID
@@ -83,7 +83,7 @@ The precision and recall of two approaches can be calculated by comparing their 
 
 ### RQ3 Evaluation
 
-Run 18 categories of micro-benchmark in **RQ3** to evaluate the accuracy of call graph generation.
+Run 18 categories of programs in **micro-benchmark** to evaluate the accuracy of call graph generation.
 
 
 *Example:* test 4 programs in category *dataflows*.
