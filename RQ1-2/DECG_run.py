@@ -13,10 +13,10 @@ def run_script(command1):
     
     try:
         result = subprocess.run(command, check=True, stdout=subprocess.PIPE, text=True)
-        print("success")
+        print("Succeed to analyze " + command1[0].split('\\')[1])
         return result
     except subprocess.CalledProcessError as e:
-        print("failure:", e)
+        print("Failed to analyze:" + command1[0].split('\\')[1], e)
         return None
 
 
