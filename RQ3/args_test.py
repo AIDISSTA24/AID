@@ -55,7 +55,7 @@ if __name__ == "__main__":
         result2 = compare_json_files(file2_path, file3_path)
         if result2:
             PyCG_accuracy += 1
-        
+        print("Testing: " + test_path + category)
         print("DECG Accuracy: " + str(DECG_accuracy) + "/" + str(len(categories)))
         print("PyCG Accuracy: " + str(PyCG_accuracy) + "/" + str(len(categories)))
         print("_________________")

@@ -93,17 +93,31 @@ The precision and recall of two approaches can be calculated by comparing their 
 
 Run 18 categories of programs in **micro-benchmark** to evaluate the accuracy of call graph generation.
 
+It is important to note that except for testing the category *dataflows*, the testing of the other 17 categories requires commenting out lines 256-258 in **AID\AID.py**, i.e., the following code:
 
-*Example:* test 4 programs in category *dataflows*.
+```
+dataflow.get_all_methods()
+dataflow.get_assign()
+dataflow.get_return()
+```
+
+*Example1:* test 4 programs in category *dataflows*.
 
 ```bash
 $ python RQ3/dataflows_test.py     
+```
+
+*Example2:* test 6 programs in category *args*.
+
+```bash
+$ python RQ3/args_test.py     
 ```
 
 
 The accuracy results of DECG and PyCG are printed out in the following format:
 
 ```bash
+Testing: micro-benchmark\dataflows\new
 DECG Accuracy: 4/4
 PyCG Accuracy: 0/4
 ```
